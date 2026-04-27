@@ -110,7 +110,17 @@ export default function AuthPage() {
               <input data-testid="login-password" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="dc-input" required />
               <button data-testid="login-submit" type="submit" disabled={busy} className="dc-btn-primary w-full">{busy ? "Signing in..." : "Sign In"}</button>
               <p className="text-xs text-[#6E6B68] text-center">
-                Demo: <button type="button" data-testid="demo-login" onClick={() => { setEmail("demo@dresscircle.in"); setPassword("demo1234"); }} className="underline hover:text-[#9C4154]">use demo account</button>
+                Demo: <button type="button" data-testid="demo-login" onClick={async () => {
+                  setEmail("demo@dresscircle.in"); setPassword("demo1234");
+                  setBusy(true);
+                  try {
+                    await login("demo@dresscircle.in", "demo1234");
+                    toast.success("Welcome back!");
+                    nav("/feed");
+                  } catch (err) {
+                    toast.error(err.response?.data?.detail || "Login failed");
+                  } finally { setBusy(false); }
+                }} className="underline hover:text-[#9C4154]">use demo account</button>
               </p>
             </form>
           )}

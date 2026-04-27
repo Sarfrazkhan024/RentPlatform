@@ -108,14 +108,14 @@ export default function Feed() {
             <SelectInput label="Category" testId="filter-category" value={filters.category} onChange={(v) => setFilters(f => ({ ...f, category: v }))} options={CATEGORIES} />
             <SelectInput label="Size" testId="filter-size" value={filters.size} onChange={(v) => setFilters(f => ({ ...f, size: v }))} options={SIZES} />
             <SelectInput label="Occasion" testId="filter-occasion" value={filters.occasion} onChange={(v) => setFilters(f => ({ ...f, occasion: v }))} options={OCCASIONS} />
-            <div>
+            <div data-testid="filter-price">
               <label className="text-overline text-[#6E6B68] block mb-2">Price (₹)</label>
               <div className="flex gap-2">
                 <input data-testid="filter-min" type="number" placeholder="Min" value={filters.min} onChange={(e) => setFilters(f => ({ ...f, min: e.target.value }))} className="dc-input" />
                 <input data-testid="filter-max" type="number" placeholder="Max" value={filters.max} onChange={(e) => setFilters(f => ({ ...f, max: e.target.value }))} className="dc-input" />
               </div>
             </div>
-            <div>
+            <div data-testid="filter-distance">
               <label className="text-overline text-[#6E6B68] block mb-2">Distance ({filters.radius} km)</label>
               <input data-testid="filter-radius" type="range" min={2} max={500} value={filters.radius} onChange={(e) => setFilters(f => ({ ...f, radius: Number(e.target.value) }))} className="w-full accent-[#9C4154]" />
             </div>
