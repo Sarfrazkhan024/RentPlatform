@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import DressCard from "../components/DressCard";
@@ -11,15 +12,26 @@ const OCCASIONS = ["All", "Wedding", "Cocktail", "Brunch", "Reception", "Festiva
 
 export default function Feed() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [listings, setListings] = useState([]);
   const [trending, setTrending] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cities, setCities] = useState([]);
   const [city, setCity] = useState("Mumbai");
   const [coords, setCoords] = useState({ lat: 19.0760, lng: 72.8777 });
-  const [filters, setFilters] = useState({ category: "All", size: "All", occasion: "All", radius: 50, q: "", min: "", max: "" });
+  const [filters, setFilters] = useState({
+    category: searchParams.get("category") || "All",
+    size: searchParams.get("size") || "All",
+    occasion: searchParams.get("occasion") || "All",
+    radius: 50,
+    q: searchParams.get("q") || "",
+    min: searchParams.get("min_price") || "",
+    max: searchParams.get("max_price") || "",
+  });
   const [wishlist, setWishlist] = useState(new Set());
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(
+    !!(searchParams.get("category") || searchParams.get("occasion") || searchParams.get("size") || searchParams.get("max_price"))
+  );
 
   useEffect(() => {
     api.get("/cities").then(r => setCities(r.data));
