@@ -1,0 +1,111 @@
+{
+  "theme": "light",
+  "archetype": "1 (Organic & Earthy) / 5 (Jewel & Luxury) Hybrid - Warm Editorial Luxe",
+  "brand_name": "DressCircle",
+  "typography": {
+    "fonts": {
+      "heading": "Cormorant Garamond",
+      "body": "Outfit",
+      "accent": "Playfair Display"
+    },
+    "pairing_strategy": "Elegant Serif Headings + Geometric Sans-Serif Body for an editorial Vogue-like aesthetic.",
+    "scale": {
+      "h1": "text-5xl sm:text-6xl tracking-tight leading-none",
+      "h2": "text-3xl sm:text-4xl tracking-tight leading-tight",
+      "h3": "text-2xl sm:text-3xl",
+      "h4": "text-xl",
+      "body": "text-base leading-relaxed",
+      "small": "text-sm",
+      "overline": "text-xs tracking-[0.2em] uppercase"
+    }
+  },
+  "colors": {
+    "palette": {
+      "base": "#FDFBF7",
+      "surface": "#FFFFFF",
+      "surface_muted": "#F5F2EB",
+      "primary": "#9C4154",
+      "primary_hover": "#8A3648",
+      "primary_light": "#F2E8EB",
+      "text_main": "#1A1A1A",
+      "text_muted": "#6E6B68",
+      "border": "#E8E3DA"
+    },
+    "rules": {
+      "contrast": "Ensure APCA/WCAG AA contrast. Use Charcoal (#1A1A1A) for readability on ivory backgrounds.",
+      "accents": "Use Deep Rose/Blush sparingly for primary CTAs and active states."
+    }
+  },
+  "layout": {
+    "spacing": "Generous spacing. Use p-8, p-12, p-16 to create 'breathing room' typical of luxury editorial design.",
+    "surfaces": "Minimal borders. Use soft ambient shadows shadow-[0_8px_30px_rgb(0,0,0,0.04)] on white cards placed over the ivory base.",
+    "radius": "Feminine softness: use rounded-2xl for cards and major elements, rounded-full for badges and primary buttons."
+  },
+  "motion": {
+    "scroll": "Smooth scrolling via Lenis for a premium momentum feel.",
+    "hover": "Images should have a slow, luxurious scale-up effect: transition-transform duration-700 ease-out hover:scale-105.",
+    "micro_interactions": "Soft opacity fades and slight upward nudges on hover (-translate-y-1 duration-300)."
+  },
+  "components": {
+    "button_primary": "bg-[#9C4154] text-white rounded-full px-8 py-3 font-medium hover:bg-[#8A3648] transition-all",
+    "button_secondary": "border border-[#E8E3DA] text-[#1A1A1A] rounded-full px-8 py-3 hover:bg-[#F5F2EB] transition-all",
+    "card": "bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-transparent hover:border-[#E8E3DA] transition-all duration-300",
+    "badge": "bg-[#F2E8EB] text-[#9C4154] text-xs px-3 py-1 rounded-full uppercase tracking-widest font-semibold"
+  },
+  "pages": {
+    "Landing": {
+      "hero": "Split layout or large edge-to-edge image. 60% Image (Indian women fashion, laughing), 40% Typography. CTA: 'Rent a Look. List Yours.'",
+      "how_it_works": "3-column bento grid with soft pastel blush background.",
+      "featured_feed": "Horizontal scrolling carousel or masonry grid of top rented dresses nearby."
+    },
+    "Auth": {
+      "layout": "Split screen. Left: Beautiful silk fabric or lifestyle image. Right: Clean, centered login/signup form with rounded inputs.",
+      "inputs": "Shadcn standard but heavily customized: h-12, rounded-xl, bg-[#F5F2EB], border-none, focus:ring-1 focus:ring-[#9C4154]"
+    },
+    "Home_Feed": {
+      "layout": "Sticky filter bar at top. Masonry or rigid 3-column grid for dress cards.",
+      "card_anatomy": "Image (aspect-[3/4] object-cover rounded-xl), Title, Size, Rent Price (bold), Distance badge."
+    },
+    "Dress_Detail": {
+      "layout": "2-column on desktop. Left: Image gallery (1 main, thumbnails below). Right: Title, Price, Owner Profile Card, Availability Calendar, CTAs (Request to Rent).",
+      "calendar": "Shadcn calendar, customized with blush primary color for selected dates."
+    },
+    "Upload_Listing": {
+      "layout": "Multi-step or single long flowing form. Image dropzone centered, form fields minimal and spacious."
+    },
+    "Profile_Dashboard": {
+      "layout": "Sidebar navigation + Main content area. Tabbed interface for Wishlist, Listings, Rentals.",
+      "reputation_score": "Prominent circular badge or progress ring showing owner rating (e.g., 4.9/5)."
+    }
+  },
+  "media": {
+    "hero": "https://images.pexels.com/photos/19218498/pexels-photo-19218498.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "background_texture": "https://images.unsplash.com/photo-1681473937206-dae584b0808a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1ODR8MHwxfHNlYXJjaHwxfHxzaWxrJTIwZmFicmljJTIwYmFja2dyb3VuZCUyMGl2b3J5fGVufDB8fHx8MTc3NzI2ODg3MXww&ixlib=rb-4.1.0&q=85",
+    "dresses": [
+      "https://images.pexels.com/photos/33343580/pexels-photo-33343580.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "https://images.pexels.com/photos/19588679/pexels-photo-19588679.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "https://images.pexels.com/photos/37013921/pexels-photo-37013921.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "https://images.unsplash.com/photo-1704775990248-4c1c1a276b4f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTV8MHwxfHNlYXJjaHwyfHxlbGVnYW50JTIwbHV4dXJ5JTIwZHJlc3N8ZW58MHx8fHwxNzc3MjY4ODY2fDA&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1601859574492-8658b6f7f990?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTV8MHwxfHNlYXJjaHwxfHxlbGVnYW50JTIwbHV4dXJ5JTIwZHJlc3N8ZW58MHx8fHwxNzc3MjY4ODY2fDA&ixlib=rb-4.1.0&q=85",
+      "https://images.pexels.com/photos/12062663/pexels-photo-12062663.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    ],
+    "profiles": [
+      "https://images.unsplash.com/photo-1663560455456-7c2fb0c8cfca?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTJ8MHwxfHNlYXJjaHwxfHxpbmRpYW4lMjB3b21hbiUyMGZhc2hpb24lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NzcyNjg4NjZ8MA&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1713296134277-6917ab5b752f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTJ8MHwxfHNlYXJjaHwyfHxpbmRpYW4lMjB3b21hbiUyMGZhc2hpb24lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NzcyNjg4NjZ8MA&ixlib=rb-4.1.0&q=85",
+      "https://images.unsplash.com/photo-1638296986007-98f1e7bb2601?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTJ8MHwxfHNlYXJjaHwzfHxpbmRpYW4lMjB3b21hbiUyMGZhc2hpb24lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NzcyNjg4NjZ8MA&ixlib=rb-4.1.0&q=85"
+    ],
+    "boutique_lifestyle": [
+      "https://images.pexels.com/photos/1827130/pexels-photo-1827130.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "https://images.pexels.com/photos/5904464/pexels-photo-5904464.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the color palette. Use #FDFBF7 for page backgrounds and #FFFFFF for cards.",
+    "Use Cormorant Garamond for all H1, H2 headings. Use Outfit for body and UI elements.",
+    "Ensure all interactive elements have data-testid attributes with kebab-case (e.g., data-testid='rent-button').",
+    "Do not use default Shadcn styles; heavily customize padding (e.g. p-6 or p-8 for cards) and remove hard borders in favor of soft ambient shadows.",
+    "Never use placeholder URLs (like via.placeholder.com). Use the provided image URLs in the media section.",
+    "Ensure the hero section overlay is subtle (e.g., gradient or max black/30 if text overlap is required, otherwise use clean side-by-side layout).",
+    "Use Lenis for smooth scrolling and Framer Motion for luxurious hover scale interactions."
+  ]
+}
