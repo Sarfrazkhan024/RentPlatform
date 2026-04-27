@@ -43,10 +43,10 @@ export default function Landing() {
   return (
     <div className="bg-[#FDFBF7]" data-testid="landing-page">
       {/* Marquee promo bar */}
-      <div className="bg-[#1A1A1A] text-[#FDFBF7] py-3 marquee">
+      <div className="bg-[#F2E8EB] text-[#9C4154] py-3 marquee border-b border-[#E8D7AE]/40">
         <div className="marquee-track">
           {[...MARQUEE, ...MARQUEE].map((t, i) => (
-            <span key={i} className="text-overline text-[#E8D7AE] flex items-center gap-3 whitespace-nowrap text-[10px]">
+            <span key={i} className="text-overline flex items-center gap-3 whitespace-nowrap text-[10px] text-[#9C4154]">
               <Diamond size={9} className="text-[#C9A661]" /> {t}
             </span>
           ))}
