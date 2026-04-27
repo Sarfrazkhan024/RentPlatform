@@ -38,11 +38,18 @@ Hyperlocal fashion rental and resale platform for women in India. Peer-to-peer m
 - ✅ Seed: 7 users + 24 dresses across 6 cities
 - ✅ Premium editorial design (Cormorant Garamond + Outfit, ivory/rose palette)
 
+## Iteration 2 (2026-02) — P1 features added
+- ✅ Live Google Maps embed on Dress Detail (Maps Embed API)
+- ✅ Review submission UI on approved bookings (validated: only renter, only approved/completed, no duplicates)
+- ✅ "Notify when available" toggle on Wishlist
+- ✅ Report listing/user dialog (`POST /api/reports`)
+- ✅ Auto-location detection on Feed (browser geolocation → `/api/geo/reverse`)
+- ✅ Top dresses section on Landing (real /trending data, bento layout)
+- ✅ Glamour redesign: gold accents, marquee strip, italic serif emphasis, testimonials, gold underline highlights
+
 ## Backlog / Phase 2 (P1/P2)
-- P1: Real Google Maps integration on dress detail (Maps Embed)
-- P1: Review submission UI on completed bookings
-- P1: Report user/listing flow
-- P1: "Notify me when available" wishlist toggle
+- P1: Background job for "notify when available" wishlist alerts (flag stored, not yet pushed)
+- P1: Rate-limit reports per user
 - P2: Subscription billing UI (Free 5 listings vs Paid ₹1000/year unlimited)
 - P2: Payment gateway, courier integration, AI styling recommendations
 

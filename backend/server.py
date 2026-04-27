@@ -699,6 +699,18 @@ async def read_all(user: dict = Depends(get_current_user)):
 # ----------- Routes: Reviews -----------
 @api_router.post("/reviews")
 async def create_review(r: ReviewCreate, user: dict = Depends(get_current_user)):
+    booking = await db.bookings.find_one({"id": r.booking_id})
+    if not booking:
+        raise HTTPException(404, "Booking not found")
+    if booking["renter_id"] != user["id"]:
+        raise HTTPException(403, "Only the renter can review this booking")
+    if booking["status"] not in ("approved", "completed"):
+        raise HTTPException(400, "Booking is not in a reviewable state")
+    if booking["listing_id"] != r.listing_id:
+        raise HTTPException(400, "Listing/booking mismatch")
+    existing = await db.reviews.find_one({"booking_id": r.booking_id})
+    if existing:
+        raise HTTPException(409, "You've already reviewed this booking")
     doc = {
         "id": str(uuid.uuid4()),
         "listing_id": r.listing_id,
