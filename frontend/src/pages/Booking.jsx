@@ -2,16 +2,17 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api, fileUrl } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import { CheckCircle, Phone, MessageSquare, ArrowLeft } from "lucide-react";
+import { CheckCircle, Phone, MessageSquare, ArrowLeft, Star } from "lucide-react";
+import ReviewForm from "../components/ReviewForm";
 
 export default function Booking() {
   const { bookingId } = useParams();
   const { user } = useAuth();
   const [booking, setBooking] = useState(null);
+  const [reviewed, setReviewed] = useState(false);
 
-  useEffect(() => {
-    api.get(`/bookings/${bookingId}`).then(r => setBooking(r.data));
-  }, [bookingId]);
+  const load = () => api.get(`/bookings/${bookingId}`).then(r => setBooking(r.data));
+  useEffect(() => { load(); }, [bookingId]);
 
   if (!booking) return <div className="max-w-3xl mx-auto p-10 text-[#6E6B68]">Loading...</div>;
 
@@ -77,6 +78,20 @@ export default function Booking() {
           <Link to={`/chat/${booking.id}`} data-testid="open-chat" className="dc-btn-secondary flex-1"><MessageSquare size={14} /> Open Chat</Link>
           {!isOwner && <Link to="/feed" className="dc-btn-primary flex-1">Browse more</Link>}
         </div>
+
+        {/* Review form: shown to renter when booking approved */}
+        {!isOwner && booking.status === "approved" && !reviewed && (
+          <ReviewForm
+            listingId={booking.listing?.id}
+            bookingId={booking.id}
+            onDone={() => setReviewed(true)}
+          />
+        )}
+        {reviewed && (
+          <div className="dc-card p-5 mt-6 text-center text-sm text-[#9C4154] flex items-center justify-center gap-2" data-testid="review-thanks">
+            <Star size={14} className="fill-[#C9A661] text-[#C9A661]" /> Review posted. Thank you!
+          </div>
+        )}
       </div>
     </div>
   );

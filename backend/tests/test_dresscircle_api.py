@@ -215,7 +215,8 @@ def booking_ctx(session, demo_headers, second_headers):
     lst = session.get(f"{API}/users/{me_second['id']}/listings").json()
     assert len(lst) > 0, "aanya should have listings"
     listing = lst[0]
-    start = (date.today() + timedelta(days=30)).isoformat()
+    # Use unique offset based on time to avoid date conflicts across runs
+    start = (date.today() + timedelta(days=400 + int(time.time()) % 200)).isoformat()
     r = session.post(f"{API}/bookings", json={
         "listing_id": listing["id"],
         "start_date": start,

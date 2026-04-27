@@ -1,0 +1,38 @@
+{
+  "summary": "Iteration 2 testing complete. Backend: 15/15 new endpoint tests pass (reports, wishlist/notify, geo/reverse, reviews) + all 27 iter1 regression tests still pass = 42/42. Frontend: Landing top-dresses-section + 6 top-dress cards + marquee + 3 testimonials all render with gold accents. Wishlist notify-toggle button toggles state ('Notify me when available' <-> 'You'll be notified') and persists. DressDetail map-embed renders Google Maps with Jaipur location, report-listing-btn opens report-dialog, report-reason/details/submit work end-to-end and show 'Report submitted' toast. Booking page on approved booking (renter view) shows review-form with star-1..5 + review-comment + review-submit; submitting posts review, shows review-thanks ('Review posted. Thank you!'), and persists in listing detail reviews list. Feed auto-location for guests: defaults to Mumbai when geolocation denied, switches to Bangalore when navigator.geolocation returns 12.9716/77.5946 coordinates (uses /api/geo/reverse correctly). No JS console errors. No regressions in iter1 flows.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_dresscircle_iter2.py",
+    "/app/backend/tests/test_dresscircle_api.py",
+    "/app/test_reports/pytest/iter2_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "MapEmbed - functional and renders interactive Google Map. Verify REACT_APP_GOOGLE_MAPS_API_KEY domain restrictions before going to production (currently key visible in iframe src on client = expected for Google Maps Embed API; protect with HTTP referrer restrictions in GCP console).",
+    "POST /api/reports has no rate limiting - a malicious user could spam reports. Consider adding per-user/per-target dedup (e.g., one open report per reporter+target_id) or basic rate limit.",
+    "/api/reviews accepts any booking_id without verifying the booking actually belongs to the reviewer or that it's in 'approved'/'completed' status. Backend test confirmed even fake-bk-id is accepted (test_review_rating_clamped). Should validate: booking exists, booking.renter_id == user.id, booking.status in ('approved','completed'), and prevent duplicate reviews per booking.",
+    "/api/wishlist/notify only mutates if record exists (404 otherwise) - good. But there is no notification trigger when the listing actually becomes available again. The flag is stored but never read by any background job - currently it's an inert preference. Document or implement the notification side.",
+    "Reverse geo only matches against 8 hard-coded cities - acceptable for MVP scope but worth noting to user/main-agent.",
+    "Iter1 booking_ctx fixture used a fixed start date (today+30) which collides on subsequent test runs. Updated to use unique offset (400 + time%200 days) so regression suite is repeatable.",
+    "Server.py is now ~790 lines - consider splitting routers if more endpoints are added in iter3."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_dresscircle_iter2.py (created)",
+    "/app/backend/tests/test_dresscircle_api.py (booking_ctx fixture: unique start date for repeatability)"
+  ],
+  "success_rate": {"backend": "100% (42/42 across iter1+iter2)", "frontend": "100% on all new flows (landing, wishlist notify, map embed, report dialog, review form, auto-location)"},
+  "test_credentials": "demo@dresscircle.in / demo1234 (renter); aanya@dresscircle.in / password123 (owner of seeded listings)",
+  "seed_data_creation": "Created TEST_-prefixed reports, reviews, bookings via API. Used existing seed listings.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Two test files now: test_dresscircle_api.py (iter1, 27 tests) and test_dresscircle_iter2.py (iter2, 15 tests). Run both with: REACT_APP_BACKEND_URL=https://wardrobe-loop.preview.emergentagent.com pytest /app/backend/tests/ -v. Booked dates accumulate across runs - the iter1 fixture now uses time-based offset to avoid collisions. If review business-logic validation is added in future iters, remove the test_review_rating_clamped test that uses fake-bk-id. Frontend: Feed page reads geolocation via navigator.geolocation.getCurrentPosition for guests - in playwright use page.context.set_geolocation + grant_permissions(['geolocation']). MapEmbed requires REACT_APP_GOOGLE_MAPS_API_KEY in /app/frontend/.env (already set).",
+  "rca of the issue": "No bugs found in iter2 features. All P1 additions (reports, wishlist notify, geo reverse, map embed, review form, redesigned landing, auto-location) work as specified. Three medium-priority hardening suggestions raised in critical_code_review_comments (review business-logic validation, report rate limiting, wishlist notify background job)."
+}

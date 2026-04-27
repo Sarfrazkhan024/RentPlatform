@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { api, fileUrl } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import { Heart, MapPin, Calendar, Star, ShieldCheck, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, MapPin, Calendar, Star, ShieldCheck, AlertTriangle, ChevronLeft, ChevronRight, Flag } from "lucide-react";
 import { Calendar as CalendarUI } from "@/components/ui/calendar";
 import { toast } from "sonner";
+import MapEmbed from "../components/MapEmbed";
+import ReportDialog from "../components/ReportDialog";
 
 const DURATIONS = [3, 6, 9];
 
@@ -20,6 +22,7 @@ export default function DressDetail() {
   const [requesting, setRequesting] = useState(false);
   const [note, setNote] = useState("");
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -200,7 +203,7 @@ export default function DressDetail() {
                     <img src={fileUrl(r.user_avatar)} alt={r.user_name} className="w-10 h-10 rounded-full object-cover bg-[#F2E8EB]" />
                     <div>
                       <div className="text-sm font-medium">{r.user_name}</div>
-                      <div className="flex gap-0.5 text-[#9C4154]">{Array.from({ length: r.rating }).map((_, i) => <Star key={i} size={12} className="fill-current" />)}</div>
+                      <div className="flex gap-0.5 text-[#C9A661]">{Array.from({ length: r.rating }).map((_, i) => <Star key={i} size={12} className="fill-current" />)}</div>
                     </div>
                   </div>
                   <p className="text-sm text-[#6E6B68] mt-3">{r.comment}</p>
@@ -211,7 +214,23 @@ export default function DressDetail() {
             <div className="text-sm text-[#6E6B68]">No reviews yet. Be the first to rent and review.</div>
           )}
         </section>
+
+        {/* Approximate location map */}
+        <section className="mt-16">
+          <div className="flex items-end justify-between mb-4">
+            <div>
+              <span className="text-overline text-[#9C4154]">Where you'll meet</span>
+              <h2 className="font-serif-display text-3xl mt-1">Approximate location</h2>
+            </div>
+            <button onClick={() => setReportOpen(true)} data-testid="report-listing-btn" className="text-xs text-[#6E6B68] hover:text-[#9C4154] flex items-center gap-1">
+              <Flag size={12} /> Report listing
+            </button>
+          </div>
+          <MapEmbed lat={dress.lat} lng={dress.lng} label={dress.city} height={300} />
+          <p className="text-xs text-[#6E6B68] mt-2">For privacy, we never reveal exact addresses. Coordinate the pickup point with the owner once approved.</p>
+        </section>
       </div>
+      {reportOpen && <ReportDialog targetType="listing" targetId={dress.id} onClose={() => setReportOpen(false)} />}
     </div>
   );
 }

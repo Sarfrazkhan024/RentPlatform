@@ -27,6 +27,24 @@ export default function Feed() {
       api.get("/wishlist").then(r => setWishlist(new Set(r.data.map(d => d.id)))).catch(() => {});
       setCity(user.city);
       setCoords({ lat: user.lat, lng: user.lng });
+    } else {
+      // Auto-detect location for guests via browser geolocation
+      const seen = sessionStorage.getItem("dc_geo_done");
+      if (!seen && navigator.geolocation) {
+        sessionStorage.setItem("dc_geo_done", "1");
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            try {
+              const { data } = await api.get(`/geo/reverse?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
+              setCity(data.city);
+              setCoords({ lat: data.lat, lng: data.lng });
+              toast.success(`Showing dresses near ${data.city}`);
+            } catch { /* fail silently */ }
+          },
+          () => { /* permission denied — keep default Mumbai */ },
+          { timeout: 6000 }
+        );
+      }
     }
   }, [user]);
 

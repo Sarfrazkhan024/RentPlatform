@@ -180,6 +180,16 @@ class ReviewCreate(BaseModel):
     rating: int
     comment: Optional[str] = None
 
+class ReportCreate(BaseModel):
+    target_type: Literal["listing", "user"]
+    target_id: str
+    reason: str
+    details: Optional[str] = None
+
+class WishlistNotify(BaseModel):
+    listing_id: str
+    notify: bool
+
 # ----------- Helpers -----------
 def hash_password(p: str) -> str:
     return bcrypt.hashpw(p.encode(), bcrypt.gensalt()).decode()
@@ -653,9 +663,22 @@ async def toggle_wishlist(payload: WishlistToggle, user: dict = Depends(get_curr
 @api_router.get("/wishlist")
 async def get_wishlist(user: dict = Depends(get_current_user)):
     items = await db.wishlist.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(200)
-    listing_ids = [i["listing_id"] for i in items]
+    notify_map = {i["listing_id"]: i.get("notify_when_available", False) for i in items}
+    listing_ids = list(notify_map.keys())
     listings = await db.listings.find({"id": {"$in": listing_ids}}, {"_id": 0}).to_list(200)
+    for l in listings:
+        l["notify_when_available"] = notify_map.get(l["id"], False)
     return listings
+
+@api_router.post("/wishlist/notify")
+async def set_wishlist_notify(payload: WishlistNotify, user: dict = Depends(get_current_user)):
+    res = await db.wishlist.update_one(
+        {"user_id": user["id"], "listing_id": payload.listing_id},
+        {"$set": {"notify_when_available": payload.notify}}
+    )
+    if res.matched_count == 0:
+        raise HTTPException(404, "Not in wishlist")
+    return {"notify": payload.notify}
 
 # ----------- Routes: Notifications -----------
 @api_router.get("/notifications")
@@ -691,7 +714,40 @@ async def create_review(r: ReviewCreate, user: dict = Depends(get_current_user))
     doc.pop("_id", None)
     return doc
 
+# ----------- Routes: Reports -----------
+@api_router.post("/reports")
+async def create_report(r: ReportCreate, user: dict = Depends(get_current_user)):
+    doc = {
+        "id": str(uuid.uuid4()),
+        "reporter_id": user["id"],
+        "reporter_name": user.get("name"),
+        "target_type": r.target_type,
+        "target_id": r.target_id,
+        "reason": r.reason,
+        "details": r.details,
+        "status": "open",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.reports.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
 # ----------- Routes: Geo / Cities -----------
+@api_router.get("/geo/reverse")
+async def reverse_geo(lat: float, lng: float):
+    cs = [
+        {"name": "Mumbai", "lat": 19.0760, "lng": 72.8777},
+        {"name": "Delhi", "lat": 28.7041, "lng": 77.1025},
+        {"name": "Bangalore", "lat": 12.9716, "lng": 77.5946},
+        {"name": "Pune", "lat": 18.5204, "lng": 73.8567},
+        {"name": "Hyderabad", "lat": 17.3850, "lng": 78.4867},
+        {"name": "Chennai", "lat": 13.0827, "lng": 80.2707},
+        {"name": "Kolkata", "lat": 22.5726, "lng": 88.3639},
+        {"name": "Jaipur", "lat": 26.9124, "lng": 75.7873},
+    ]
+    best = min(cs, key=lambda c: haversine(lat, lng, c["lat"], c["lng"]))
+    return {"city": best["name"], "lat": best["lat"], "lng": best["lng"], "distance_km": round(haversine(lat, lng, best["lat"], best["lng"]), 1)}
+
 @api_router.get("/cities")
 async def cities():
     return [
