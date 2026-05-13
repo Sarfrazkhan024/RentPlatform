@@ -971,10 +971,25 @@ async def admin_delete_listing(listing_id: str, _: dict = Depends(require_admin)
     # hard delete + decrement owner's listings_count
     await db.listings.delete_one({"id": listing_id})
     await db.users.update_one({"id": listing["owner_id"]}, {"$inc": {"listings_count": -1}})
-    # cascade clean: remove from wishlists, cancel pending bookings
+    # cascade clean
     await db.wishlist.delete_many({"listing_id": listing_id})
-    await db.bookings.update_many({"listing_id": listing_id, "status": "pending"}, {"$set": {"status": "rejected"}})
-    return {"ok": True}
+    # Notify and reject all live bookings (pending + approved) so renters/owners aren't left dangling
+    affected = await db.bookings.find(
+        {"listing_id": listing_id, "status": {"$in": ["pending", "approved"]}},
+        {"_id": 0, "id": 1, "renter_id": 1, "status": 1}
+    ).to_list(200)
+    for b in affected:
+        await push_notification(
+            b["renter_id"], "booking_cancelled",
+            "Booking cancelled",
+            f"The listing '{listing['title']}' was removed by Restyle. Your booking has been cancelled.",
+            "/profile"
+        )
+    await db.bookings.update_many(
+        {"listing_id": listing_id, "status": {"$in": ["pending", "approved"]}},
+        {"$set": {"status": "cancelled", "cancel_reason": "listing_deleted_by_admin"}}
+    )
+    return {"ok": True, "cancelled_bookings": len(affected)}
 
 @api_router.post("/admin/listings/{listing_id}/remove")
 async def admin_remove_listing(listing_id: str, _: dict = Depends(require_admin)):
@@ -1044,6 +1059,7 @@ async def admin_delete_user(user_id: str, admin: dict = Depends(require_admin)):
     await db.bookings.delete_many({"$or": [{"renter_id": user_id}, {"owner_id": user_id}]})
     await db.wishlist.delete_many({"user_id": user_id})
     await db.notifications.delete_many({"user_id": user_id})
+    await db.reports.delete_many({"$or": [{"reporter_id": user_id}, {"target_type": "user", "target_id": user_id}]})
     return {"ok": True}
 
 @api_router.get("/admin/reports")

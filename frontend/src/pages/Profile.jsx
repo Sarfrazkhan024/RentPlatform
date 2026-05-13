@@ -80,15 +80,15 @@ export default function Profile() {
                 <div key={d.id} className="relative" data-testid={`profile-listing-${d.id}`}>
                   <DressCard dress={d} />
                   {d.status === "under_review" && (
-                    <span className="absolute top-5 left-5 dc-badge bg-[#FFF7E6] text-[#9A7C1A] flex items-center gap-1" data-testid={`under-review-badge-${d.id}`}>
+                    <span className="absolute top-6 left-6 dc-badge bg-[#FFF7E6] text-[#9A7C1A] flex items-center gap-1 z-10 shadow-sm" data-testid={`under-review-badge-${d.id}`}>
                       <Clock size={9} /> Under review
                     </span>
                   )}
                   {d.status === "rejected" && (
-                    <span className="absolute top-5 left-5 dc-badge bg-[#FEEAEA] text-[#A53030]" data-testid={`rejected-badge-${d.id}`}>Rejected</span>
+                    <span className="absolute top-6 left-6 dc-badge bg-[#FEEAEA] text-[#A53030] z-10 shadow-sm" data-testid={`rejected-badge-${d.id}`}>Rejected</span>
                   )}
                   {d.status === "inactive" && (
-                    <span className="absolute top-5 left-5 dc-badge bg-[#F5F2EB] text-[#6E6B68]">Removed</span>
+                    <span className="absolute top-6 left-6 dc-badge bg-[#1A1A1A] text-[#FDFBF7] z-10 shadow-sm">Removed</span>
                   )}
                 </div>
               ))}

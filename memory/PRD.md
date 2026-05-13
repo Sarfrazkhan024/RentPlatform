@@ -58,10 +58,18 @@ Hyperlocal fashion rental and resale platform for women in India. Peer-to-peer m
 - ✅ Default listings sort = distance ascending, no cap (radius_km default 100000)
 - ✅ Fixed route order: `/bookings/active` declared before `/bookings/{id}` (caught by testing agent)
 
+## Iteration 4 (2026-05) — Admin CRUD + Listing approval workflow
+- ✅ New listings start in `status="under_review"` → admin must approve before public
+- ✅ Admin approve / reject endpoints (with reason for reject) + owner notifications
+- ✅ Full **Admin CRUD for Users**: create, edit (any field incl. is_admin/suspended), hard delete with cascade (listings, bookings, wishlist, notifications, reports)
+- ✅ Full **Admin CRUD for Listings**: edit any field, hard delete with cascade (wishlist clear, pending+approved bookings auto-cancelled with renter notification)
+- ✅ Admin panel: new **Pending tab** with approve/reject/preview, **Pending Review** stat card, status filter chips (all/under_review/active/inactive/rejected), view-preview modal
+- ✅ Owner Profile: shows their `under_review` listings with "Under review" badge + rejected/removed badges
+- ✅ Upload success message: "Listing submitted! It will be live once our team approves it."
+
 ## Backlog / Phase 2 (P1/P2)
 - P1: Background job to push "notify when available" wishlist alerts
-- P1: Rate-limit reports per user
-- P1: Refactor server.py (~950 lines) into routers
+- P1: Rate-limit reports per user; refactor server.py into modular routers
 - P2: Subscription billing UI (Free 5 listings vs Paid ₹1000/year unlimited)
 - P2: Payment gateway, courier integration, AI styling recommendations
 
