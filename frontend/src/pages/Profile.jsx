@@ -76,7 +76,22 @@ export default function Profile() {
         <div className="mt-8">
           {tab === "listings" && (
             <Grid empty="No listings yet.">
-              {listings.map(d => <DressCard key={d.id} dress={d} />)}
+              {listings.map(d => (
+                <div key={d.id} className="relative" data-testid={`profile-listing-${d.id}`}>
+                  <DressCard dress={d} />
+                  {d.status === "under_review" && (
+                    <span className="absolute top-5 left-5 dc-badge bg-[#FFF7E6] text-[#9A7C1A] flex items-center gap-1" data-testid={`under-review-badge-${d.id}`}>
+                      <Clock size={9} /> Under review
+                    </span>
+                  )}
+                  {d.status === "rejected" && (
+                    <span className="absolute top-5 left-5 dc-badge bg-[#FEEAEA] text-[#A53030]" data-testid={`rejected-badge-${d.id}`}>Rejected</span>
+                  )}
+                  {d.status === "inactive" && (
+                    <span className="absolute top-5 left-5 dc-badge bg-[#F5F2EB] text-[#6E6B68]">Removed</span>
+                  )}
+                </div>
+              ))}
             </Grid>
           )}
 

@@ -68,8 +68,8 @@ export default function UploadListing() {
         images: images.map(i => i.url),
       };
       const { data } = await api.post("/listings", payload);
-      toast.success("Listing published!");
-      nav(`/dress/${data.id}`);
+      toast.success("Listing submitted! It will be live once our team approves it.", { duration: 5000 });
+      nav(`/profile`);
     } catch (err) {
       toast.error(err.response?.data?.detail || "Failed");
     } finally { setBusy(false); }

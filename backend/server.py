@@ -198,6 +198,37 @@ class WishlistNotify(BaseModel):
 class AdminAction(BaseModel):
     reason: Optional[str] = None
 
+class AdminUserCreate(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    city: Optional[str] = "Mumbai"
+    phone: Optional[str] = None
+    is_admin: Optional[bool] = False
+
+class AdminUserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    city: Optional[str] = None
+    phone: Optional[str] = None
+    is_admin: Optional[bool] = None
+    suspended: Optional[bool] = None
+
+class AdminListingUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    size: Optional[str] = None
+    color: Optional[str] = None
+    brand: Optional[str] = None
+    occasion: Optional[str] = None
+    condition: Optional[str] = None
+    item_type: Optional[str] = None
+    rent_price: Optional[float] = None
+    security_deposit: Optional[float] = None
+    sale_price: Optional[float] = None
+    status: Optional[str] = None
+
 # ----------- Helpers -----------
 def hash_password(p: str) -> str:
     return bcrypt.hashpw(p.encode(), bcrypt.gensalt()).decode()
@@ -424,13 +455,22 @@ async def create_listing(payload: ListingCreate, user: dict = Depends(get_curren
         "available_from": payload.available_from,
         "available_to": payload.available_to,
         "booked_dates": [],
-        "status": "active",
+        "status": "under_review",       # NEW: requires admin approval
         "views": 0,
         "times_rented": 0,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.listings.insert_one(listing)
     await db.users.update_one({"id": user["id"]}, {"$inc": {"listings_count": 1}})
+    # Notify all admins
+    admins = await db.users.find({"is_admin": True}, {"_id": 0, "id": 1}).to_list(50)
+    for a in admins:
+        await push_notification(
+            a["id"], "listing_review",
+            "New listing awaiting review",
+            f"'{payload.title}' by {user['name']} needs approval.",
+            "/admin"
+        )
     listing.pop("_id", None)
     return listing
 
@@ -529,8 +569,14 @@ async def delete_listing(listing_id: str, user: dict = Depends(get_current_user)
     return {"ok": True}
 
 @api_router.get("/users/{user_id}/listings")
-async def user_listings(user_id: str):
-    docs = await db.listings.find({"owner_id": user_id, "status": "active"}, {"_id": 0}).sort("created_at", -1).to_list(200)
+async def user_listings(user_id: str, viewer: Optional[dict] = Depends(get_optional_user)):
+    # Owner viewing own profile sees all statuses (active + under_review + inactive);
+    # everyone else sees only active.
+    if viewer and viewer["id"] == user_id:
+        query = {"owner_id": user_id, "status": {"$ne": "deleted"}}
+    else:
+        query = {"owner_id": user_id, "status": "active"}
+    docs = await db.listings.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
     return docs
 
 # ----------- Routes: Bookings -----------
@@ -825,6 +871,7 @@ async def admin_stats(_: dict = Depends(require_admin)):
     return {
         "users": await db.users.count_documents({}),
         "listings_active": await db.listings.count_documents({"status": "active"}),
+        "listings_under_review": await db.listings.count_documents({"status": "under_review"}),
         "listings_removed": await db.listings.count_documents({"status": "inactive"}),
         "bookings_pending": await db.bookings.count_documents({"status": "pending"}),
         "bookings_approved": await db.bookings.count_documents({"status": "approved"}),
@@ -867,7 +914,67 @@ async def admin_listings(_: dict = Depends(require_admin), status: Optional[str]
     if status:
         query["status"] = status
     rows = await db.listings.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
+    # enrich with owner snippet
+    for l in rows:
+        owner = await db.users.find_one({"id": l["owner_id"]}, {"_id": 0, "name": 1, "email": 1, "avatar": 1, "id": 1, "suspended": 1})
+        l["owner"] = owner
     return rows
+
+@api_router.post("/admin/listings/{listing_id}/approve")
+async def admin_approve_listing(listing_id: str, _: dict = Depends(require_admin)):
+    listing = await db.listings.find_one({"id": listing_id})
+    if not listing:
+        raise HTTPException(404, "Listing not found")
+    if listing["status"] != "under_review":
+        raise HTTPException(400, f"Listing is in '{listing['status']}' state, not under_review")
+    owner = await db.users.find_one({"id": listing["owner_id"]})
+    if owner and owner.get("suspended"):
+        raise HTTPException(400, "Cannot approve: owner is suspended")
+    await db.listings.update_one({"id": listing_id}, {"$set": {"status": "active"}})
+    await push_notification(
+        listing["owner_id"], "listing_approved",
+        "Your listing is live!",
+        f"'{listing['title']}' has been approved and is now visible to renters.",
+        f"/dress/{listing_id}"
+    )
+    return {"ok": True}
+
+@api_router.post("/admin/listings/{listing_id}/reject")
+async def admin_reject_listing(listing_id: str, body: AdminAction, _: dict = Depends(require_admin)):
+    listing = await db.listings.find_one({"id": listing_id})
+    if not listing:
+        raise HTTPException(404, "Listing not found")
+    await db.listings.update_one({"id": listing_id}, {"$set": {"status": "rejected", "reject_reason": body.reason}})
+    await push_notification(
+        listing["owner_id"], "listing_rejected",
+        "Your listing was not approved",
+        f"'{listing['title']}' was declined. Reason: {body.reason or 'Quality / policy review'}.",
+        "/profile"
+    )
+    return {"ok": True}
+
+@api_router.put("/admin/listings/{listing_id}")
+async def admin_update_listing(listing_id: str, payload: AdminListingUpdate, _: dict = Depends(require_admin)):
+    listing = await db.listings.find_one({"id": listing_id})
+    if not listing:
+        raise HTTPException(404, "Listing not found")
+    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if updates:
+        await db.listings.update_one({"id": listing_id}, {"$set": updates})
+    return await db.listings.find_one({"id": listing_id}, {"_id": 0})
+
+@api_router.delete("/admin/listings/{listing_id}")
+async def admin_delete_listing(listing_id: str, _: dict = Depends(require_admin)):
+    listing = await db.listings.find_one({"id": listing_id})
+    if not listing:
+        raise HTTPException(404, "Listing not found")
+    # hard delete + decrement owner's listings_count
+    await db.listings.delete_one({"id": listing_id})
+    await db.users.update_one({"id": listing["owner_id"]}, {"$inc": {"listings_count": -1}})
+    # cascade clean: remove from wishlists, cancel pending bookings
+    await db.wishlist.delete_many({"listing_id": listing_id})
+    await db.bookings.update_many({"listing_id": listing_id, "status": "pending"}, {"$set": {"status": "rejected"}})
+    return {"ok": True}
 
 @api_router.post("/admin/listings/{listing_id}/remove")
 async def admin_remove_listing(listing_id: str, _: dict = Depends(require_admin)):
@@ -883,6 +990,60 @@ async def admin_restore_listing(listing_id: str, _: dict = Depends(require_admin
     if owner and owner.get("suspended"):
         raise HTTPException(400, "Cannot restore listing: owner is suspended. Unsuspend the owner first.")
     await db.listings.update_one({"id": listing_id}, {"$set": {"status": "active"}})
+    return {"ok": True}
+
+@api_router.post("/admin/users")
+async def admin_create_user(payload: AdminUserCreate, _: dict = Depends(require_admin)):
+    existing = await db.users.find_one({"email": payload.email})
+    if existing:
+        raise HTTPException(400, "Email already registered")
+    city_coords = {
+        "Mumbai": (19.0760, 72.8777), "Delhi": (28.7041, 77.1025), "Bangalore": (12.9716, 77.5946),
+        "Pune": (18.5204, 73.8567), "Hyderabad": (17.3850, 78.4867), "Chennai": (13.0827, 80.2707),
+        "Kolkata": (22.5726, 88.3639), "Jaipur": (26.9124, 75.7873),
+    }
+    lat, lng = city_coords.get(payload.city or "Mumbai", (19.0760, 72.8777))
+    doc = {
+        "id": str(uuid.uuid4()),
+        "name": payload.name,
+        "email": payload.email,
+        "phone": payload.phone,
+        "city": payload.city or "Mumbai",
+        "lat": lat, "lng": lng,
+        "avatar": None,
+        "rating": 5.0,
+        "rentals_count": 0, "listings_count": 0,
+        "is_admin": bool(payload.is_admin),
+        "suspended": False,
+        "password_hash": hash_password(payload.password),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.users.insert_one(doc)
+    doc.pop("_id", None); doc.pop("password_hash", None)
+    return doc
+
+@api_router.put("/admin/users/{user_id}")
+async def admin_update_user(user_id: str, payload: AdminUserUpdate, _: dict = Depends(require_admin)):
+    if not await db.users.find_one({"id": user_id}):
+        raise HTTPException(404, "User not found")
+    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if updates:
+        await db.users.update_one({"id": user_id}, {"$set": updates})
+    return await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+
+@api_router.delete("/admin/users/{user_id}")
+async def admin_delete_user(user_id: str, admin: dict = Depends(require_admin)):
+    if user_id == admin["id"]:
+        raise HTTPException(400, "You cannot delete your own admin account")
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(404, "User not found")
+    # hard delete user + cascade
+    await db.users.delete_one({"id": user_id})
+    await db.listings.delete_many({"owner_id": user_id})
+    await db.bookings.delete_many({"$or": [{"renter_id": user_id}, {"owner_id": user_id}]})
+    await db.wishlist.delete_many({"user_id": user_id})
+    await db.notifications.delete_many({"user_id": user_id})
     return {"ok": True}
 
 @api_router.get("/admin/reports")

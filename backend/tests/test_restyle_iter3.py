@@ -288,6 +288,9 @@ class TestSuspendFlow:
                          timeout=30)
         assert l.status_code == 200
         lid = l.json()["id"]
+        # iter4: new listings start as under_review; admin approve to make active before suspend
+        ar = requests.post(f"{API}/admin/listings/{lid}/approve", headers=H(admin_token), timeout=30)
+        assert ar.status_code == 200, f"approve failed: {ar.text}"
         # Suspend
         s = requests.post(f"{API}/admin/users/{uid}/suspend", headers=H(admin_token), timeout=30)
         assert s.status_code == 200
