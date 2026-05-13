@@ -18,6 +18,7 @@ import Notifications from "@/pages/Notifications";
 import Wishlist from "@/pages/Wishlist";
 import Chat from "@/pages/Chat";
 import Booking from "@/pages/Booking";
+import Admin from "@/pages/Admin";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -53,6 +54,7 @@ function App() {
           <Route path="/wishlist" element={<ProtectedRoute><Layout><Wishlist /></Layout></ProtectedRoute>} />
           <Route path="/chat/:bookingId" element={<ProtectedRoute><Layout><Chat /></Layout></ProtectedRoute>} />
           <Route path="/booking/:bookingId" element={<ProtectedRoute><Layout><Booking /></Layout></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><Layout><Admin /></Layout></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
       <Toaster position="top-right" />

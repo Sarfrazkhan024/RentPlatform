@@ -23,7 +23,8 @@ export default function Feed() {
     category: searchParams.get("category") || "All",
     size: searchParams.get("size") || "All",
     occasion: searchParams.get("occasion") || "All",
-    radius: 50,
+    item_type: searchParams.get("item_type") || "All",
+    radius: 10000,
     q: searchParams.get("q") || "",
     min: searchParams.get("min_price") || "",
     max: searchParams.get("max_price") || "",
@@ -68,6 +69,7 @@ export default function Feed() {
     if (filters.category !== "All") params.set("category", filters.category);
     if (filters.size !== "All") params.set("size", filters.size);
     if (filters.occasion !== "All") params.set("occasion", filters.occasion);
+    if (filters.item_type !== "All") params.set("item_type", filters.item_type);
     if (filters.min) params.set("min_price", filters.min);
     if (filters.max) params.set("max_price", filters.max);
     if (filters.q) params.set("q", filters.q);
@@ -146,8 +148,8 @@ export default function Feed() {
               </div>
             </div>
             <div data-testid="filter-distance">
-              <label className="text-overline text-[#6E6B68] block mb-2">Distance ({filters.radius} km)</label>
-              <input data-testid="filter-radius" type="range" min={2} max={500} value={filters.radius} onChange={(e) => setFilters(f => ({ ...f, radius: Number(e.target.value) }))} className="w-full accent-[#9C4154]" />
+              <label className="text-overline text-[#6E6B68] block mb-2">Distance ({filters.radius >= 10000 ? "All" : filters.radius + " km"})</label>
+              <input data-testid="filter-radius" type="range" min={2} max={10000} value={filters.radius} onChange={(e) => setFilters(f => ({ ...f, radius: Number(e.target.value) }))} className="w-full accent-[#9C4154]" />
             </div>
           </div>
         )}

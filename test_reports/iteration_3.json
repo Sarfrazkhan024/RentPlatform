@@ -1,0 +1,38 @@
+{
+  "summary": "Iter3 testing complete. Backend: 20/20 new tests in test_restyle_iter3.py pass after fixing a critical FastAPI route-ordering bug. Frontend: /admin panel, On Rent tab, condition badges + 'Rented Nx' counters, item-type toggle, non-admin guard, and full Restyle rebrand all verified visually and behaviourally. One bug found and fixed by testing agent: GET /api/bookings/active was returning 404 because it was declared AFTER /api/bookings/{booking_id} and FastAPI matched 'active' as a booking_id. Reordered the routes - now passes. Old iter1/iter2 test files fail with 401 because they used @dresscircle.in seed accounts that no longer exist (expected per review request).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_restyle_iter3.py",
+    "/app/test_reports/pytest/iter3_results.xml"
+  ],
+  "action_items": [
+    "Optional: Update or remove obsolete /app/backend/tests/test_dresscircle_api.py and test_dresscircle_iter2.py - their @dresscircle.in seeded credentials no longer exist after iter3 reseed; they now fail with 401 on the demo login fixture. Either rewrite them with @restyle.in or delete them in favour of test_restyle_iter3.py."
+  ],
+  "critical_code_review_comments": [
+    "FIXED by testing agent: /api/bookings/active was unreachable due to FastAPI route ordering - /bookings/{booking_id} was declared first and shadowed the literal /bookings/active. Moved the literal route before the parametric route in server.py. This impacted the Profile -> 'On Rent' tab on the frontend (would have shown 'Booking not found').",
+    "PUT /api/listings/{listing_id} uses ListingCreate.model_dump() which will overwrite owner_id-implicit fields like city/lat/lng (these are set on create from user data). Updating a listing currently leaves stale geo if the user moves cities. Consider only setting whitelisted fields on update.",
+    "POST /api/admin/users/{id}/suspend deactivates ALL their listings (status=inactive), but POST /unsuspend does NOT reactivate them. After unsuspend the user has to manually re-list. Either store a separate 'suspended_by_admin' flag on listings and restore on unsuspend, or document this behaviour.",
+    "/api/admin/listings/{id}/restore sets status=active without checking the owner is currently un-suspended. An admin could restore a listing owned by a still-suspended user. Add a check: owner must not be suspended.",
+    "ListingCreate.category is typed as `str` (free-form) while DressListing return-model still uses Literal['Western','Ethnic','Partywear','Formal']. Accessory categories (Jewellery/Bags/Shoes/Belts/Scarves) bypass validation on create and would break Pydantic serialization if any response handler ever used the DressListing model. Update DressListing.category to `str` or to a Union of dress+accessory literals.",
+    "server.py is now ~942 lines - split admin and bookings into separate routers."
+  ],
+  "updated_files": [
+    "/app/backend/server.py (route order fix: /bookings/active moved before /bookings/{booking_id})",
+    "/app/backend/tests/test_restyle_iter3.py (new - 20 tests)"
+  ],
+  "success_rate": {"backend": "100% (20/20 iter3 tests)", "frontend": "100% on all iter3 flows (admin panel, on-rent tab, condition badges, rented counter, item-type toggle, admin guard, rebrand)"},
+  "test_credentials": "admin@restyle.in / admin1234 (is_admin); demo@restyle.in / demo1234; aanya@restyle.in / password123 (owner)",
+  "seed_data_creation": "Created TEST_-prefixed signup user for suspend flow + TEST_ report. Some bookings remain in approved/completed state for owner aanya (used for times_rented increment verification).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Use /app/backend/tests/test_restyle_iter3.py as the active backend regression suite. Old test_dresscircle_*.py files are now broken because their @dresscircle.in fixtures don't exist post-reseed - main agent should clean those up or port to @restyle.in. Route-ordering bug in FastAPI fixed: /bookings/active is now declared before /bookings/{booking_id}. Test fixtures use unique date offsets (600+time%100, 800+time%100) to avoid collisions across runs.",
+  "rca of the issue": "Bug: GET /api/bookings/active returned 404. RCA: FastAPI matches routes in declaration order. /bookings/{booking_id} was declared at line 591 and /bookings/active at line 657, so the path parameter route swallowed 'active' as a booking_id, then the handler returned 404 'Booking not found'. Repro: GET /api/bookings/active with valid auth -> 404. Fix: Moved the literal /bookings/active handler to BEFORE the /bookings/{booking_id} handler in server.py. Verified via test_restyle_iter3.py::TestActiveRentals::test_bookings_active_shape now passing (was failing 404 before fix)."
+}

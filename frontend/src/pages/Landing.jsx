@@ -18,7 +18,7 @@ const CATEGORIES = [
   { name: "Western", q: "category=Western", img: "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?crop=entropy&cs=srgb&fm=jpg&q=85&w=400" },
   { name: "Ethnic", q: "category=Ethnic", img: "https://images.pexels.com/photos/33343580/pexels-photo-33343580.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=400&w=400" },
   { name: "Partywear", q: "category=Partywear", img: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?crop=entropy&cs=srgb&fm=jpg&q=85&w=400" },
-  { name: "Formal", q: "category=Formal", img: "https://images.pexels.com/photos/12062663/pexels-photo-12062663.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=400&w=400" },
+  { name: "Accessories", q: "item_type=accessory", img: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?crop=entropy&cs=srgb&fm=jpg&q=85&w=400" },
 ];
 
 const MARQUEE = ["Pre-loved Couture", "Nearby & Verified", "Zero Waste, Full Glamour", "Free to List", "By Indian Women, For Indian Women", "Every Outfit, Once Belonged"];

@@ -38,7 +38,7 @@ export default function ReportDialog({ targetType, targetId, onClose }) {
               <Flag size={18} className="text-[#9C4154]" />
             </div>
             <h3 className="font-serif-display text-2xl">Report this {targetType}</h3>
-            <p className="text-xs text-[#6E6B68] mt-1">Help us keep DressCircle safe and trusted.</p>
+            <p className="text-xs text-[#6E6B68] mt-1">Help us keep Restyle safe and trusted.</p>
           </div>
           <button onClick={onClose} data-testid="report-close" className="p-1 hover:bg-[#F5F2EB] rounded-full"><X size={16} /></button>
         </div>

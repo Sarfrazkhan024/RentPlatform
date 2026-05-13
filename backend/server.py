@@ -157,6 +157,8 @@ class ListingCreate(BaseModel):
     images: List[str]
     available_from: Optional[str] = None
     available_to: Optional[str] = None
+    condition: Optional[str] = "Good"          # New | Like New | Good | Fair | Well Loved
+    item_type: Optional[str] = "dress"         # dress | accessory
 
 class BookingRequest(BaseModel):
     listing_id: str
@@ -189,6 +191,9 @@ class ReportCreate(BaseModel):
 class WishlistNotify(BaseModel):
     listing_id: str
     notify: bool
+
+class AdminAction(BaseModel):
+    reason: Optional[str] = None
 
 # ----------- Helpers -----------
 def hash_password(p: str) -> str:
@@ -226,6 +231,11 @@ async def get_optional_user(creds: HTTPAuthorizationCredentials = Depends(securi
         return user
     except Exception:
         return None
+
+async def require_admin(user: dict = Depends(get_current_user)) -> dict:
+    if not user.get("is_admin"):
+        raise HTTPException(403, "Admin access required")
+    return user
 
 def haversine(lat1, lng1, lat2, lng2) -> float:
     R = 6371.0
@@ -304,6 +314,8 @@ async def login(req: LoginRequest):
     user = await db.users.find_one({"email": req.email})
     if not user or not verify_password(req.password, user.get("password_hash", "")):
         raise HTTPException(401, "Invalid email or password")
+    if user.get("suspended"):
+        raise HTTPException(403, "Your account has been suspended. Contact support.")
     token = make_token(user["id"])
     user.pop("password_hash"); user.pop("_id", None)
     return {"token": token, "user": user}
@@ -397,6 +409,8 @@ async def create_listing(payload: ListingCreate, user: dict = Depends(get_curren
         "color": payload.color,
         "brand": payload.brand,
         "occasion": payload.occasion,
+        "condition": payload.condition or "Good",
+        "item_type": payload.item_type or "dress",
         "rent_price": payload.rent_price,
         "security_deposit": payload.security_deposit,
         "sale_price": payload.sale_price,
@@ -409,6 +423,7 @@ async def create_listing(payload: ListingCreate, user: dict = Depends(get_curren
         "booked_dates": [],
         "status": "active",
         "views": 0,
+        "times_rented": 0,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.listings.insert_one(listing)
@@ -420,14 +435,16 @@ async def create_listing(payload: ListingCreate, user: dict = Depends(get_curren
 async def list_listings(
     lat: Optional[float] = None,
     lng: Optional[float] = None,
-    radius_km: float = 10.0,
+    radius_km: float = 100000.0,         # show all by default — frontend can override
     category: Optional[str] = None,
     size: Optional[str] = None,
     occasion: Optional[str] = None,
+    condition: Optional[str] = None,
+    item_type: Optional[str] = None,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     q: Optional[str] = None,
-    limit: int = 60,
+    limit: int = 200,
 ):
     query = {"status": "active"}
     if category:
@@ -436,6 +453,10 @@ async def list_listings(
         query["size"] = size
     if occasion:
         query["occasion"] = occasion
+    if condition:
+        query["condition"] = condition
+    if item_type:
+        query["item_type"] = item_type
     if min_price is not None:
         query.setdefault("rent_price", {})["$gte"] = min_price
     if max_price is not None:
@@ -446,17 +467,21 @@ async def list_listings(
             {"description": {"$regex": q, "$options": "i"}},
             {"brand": {"$regex": q, "$options": "i"}},
         ]
-    docs = await db.listings.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
+    docs = await db.listings.find(query, {"_id": 0}).to_list(1000)
     if lat is not None and lng is not None:
+        # always sort by distance ascending — show nearest first, then expand outward
         for d in docs:
             d["distance_km"] = round(haversine(lat, lng, d["lat"], d["lng"]), 2)
-        # auto expand if nothing within radius
-        within = [d for d in docs if d["distance_km"] <= radius_km]
-        if not within and docs:
-            within = sorted(docs, key=lambda x: x["distance_km"])[:limit]
-        else:
-            within = sorted(within, key=lambda x: x["distance_km"])
-        return within[:limit]
+        docs = sorted(docs, key=lambda x: x["distance_km"])
+        # Filter only when caller passed a tight radius (<100000)
+        if radius_km < 100000:
+            within = [d for d in docs if d["distance_km"] <= radius_km]
+            if not within and docs:
+                within = docs[:limit]
+            docs = within
+    else:
+        # No location → sort by recency
+        docs = sorted(docs, key=lambda x: x.get("created_at", ""), reverse=True)
     return docs[:limit]
 
 @api_router.get("/listings/trending")
@@ -563,6 +588,39 @@ async def my_bookings(user: dict = Depends(get_current_user)):
         return arr
     return {"as_renter": await enrich(as_renter), "as_owner": await enrich(as_owner)}
 
+@api_router.get("/bookings/active")
+async def active_rentals(user: dict = Depends(get_current_user)):
+    """Active (on-rent) + delayed bookings for this user (as renter and as owner).
+
+    NOTE: Must be declared BEFORE /bookings/{booking_id} or FastAPI will match 'active' as an id.
+    """
+    today = date.today().isoformat()
+    rows = await db.bookings.find(
+        {"$and": [
+            {"status": "approved"},
+            {"$or": [{"renter_id": user["id"]}, {"owner_id": user["id"]}]}
+        ]},
+        {"_id": 0}
+    ).sort("start_date", 1).to_list(500)
+    out = []
+    for b in rows:
+        end_date = (date.fromisoformat(b["start_date"]) + timedelta(days=b["duration_days"])).isoformat()
+        delayed = today > end_date
+        listing = await db.listings.find_one({"id": b["listing_id"]}, {"_id": 0, "title": 1, "images": 1, "id": 1})
+        renter = await db.users.find_one({"id": b["renter_id"]}, {"_id": 0, "name": 1, "phone": 1, "id": 1, "avatar": 1})
+        owner = await db.users.find_one({"id": b["owner_id"]}, {"_id": 0, "name": 1, "phone": 1, "id": 1, "avatar": 1})
+        b["end_date"] = end_date
+        b["delayed"] = delayed
+        b["listing"] = listing
+        b["renter"] = renter
+        b["owner"] = owner
+        b["role"] = "renter" if user["id"] == b["renter_id"] else "owner"
+        out.append(b)
+    on_rent = [b for b in out if not b["delayed"]]
+    delayed_list = [b for b in out if b["delayed"]]
+    return {"on_rent": on_rent, "delayed": delayed_list}
+
+
 @api_router.get("/bookings/{booking_id}")
 async def get_booking(booking_id: str, user: dict = Depends(get_current_user)):
     b = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
@@ -594,9 +652,11 @@ async def action_booking(booking_id: str, body: BookingAction, user: dict = Depe
         # lock dates
         await db.listings.update_one(
             {"id": b["listing_id"]},
-            {"$addToSet": {"booked_dates": {"$each": b["dates"]}}}
+            {"$addToSet": {"booked_dates": {"$each": b["dates"]}},
+             "$inc": {"times_rented": 1}}
         )
         await db.bookings.update_one({"id": booking_id}, {"$set": {"status": "approved", "contact_revealed": True}})
+        await db.users.update_one({"id": b["renter_id"]}, {"$inc": {"rentals_count": 1}})
         await push_notification(b["renter_id"], "booking_approved", "Booking approved!",
                                 "Your booking was approved. Contact details are now visible.", "/profile")
     else:
@@ -613,6 +673,18 @@ async def reveal_contact(booking_id: str, user: dict = Depends(get_current_user)
     if user["id"] not in (b["renter_id"], b["owner_id"]):
         raise HTTPException(403, "Forbidden")
     await db.bookings.update_one({"id": booking_id}, {"$set": {"contact_revealed": True}})
+    return {"ok": True}
+
+@api_router.post("/bookings/{booking_id}/complete")
+async def complete_booking(booking_id: str, user: dict = Depends(get_current_user)):
+    b = await db.bookings.find_one({"id": booking_id})
+    if not b:
+        raise HTTPException(404, "Booking not found")
+    if user["id"] not in (b["renter_id"], b["owner_id"]):
+        raise HTTPException(403, "Forbidden")
+    if b["status"] != "approved":
+        raise HTTPException(400, "Only approved bookings can be marked completed")
+    await db.bookings.update_one({"id": booking_id}, {"$set": {"status": "completed"}})
     return {"ok": True}
 
 # ----------- Routes: Messages -----------
@@ -743,6 +815,72 @@ async def create_report(r: ReportCreate, user: dict = Depends(get_current_user))
     await db.reports.insert_one(doc)
     doc.pop("_id", None)
     return doc
+
+# ----------- Routes: Admin -----------
+@api_router.get("/admin/stats")
+async def admin_stats(_: dict = Depends(require_admin)):
+    return {
+        "users": await db.users.count_documents({}),
+        "listings_active": await db.listings.count_documents({"status": "active"}),
+        "listings_removed": await db.listings.count_documents({"status": "inactive"}),
+        "bookings_pending": await db.bookings.count_documents({"status": "pending"}),
+        "bookings_approved": await db.bookings.count_documents({"status": "approved"}),
+        "bookings_completed": await db.bookings.count_documents({"status": "completed"}),
+        "reports_open": await db.reports.count_documents({"status": "open"}),
+        "reports_resolved": await db.reports.count_documents({"status": "resolved"}),
+    }
+
+@api_router.get("/admin/users")
+async def admin_users(_: dict = Depends(require_admin), q: Optional[str] = None):
+    query = {}
+    if q:
+        query = {"$or": [{"name": {"$regex": q, "$options": "i"}}, {"email": {"$regex": q, "$options": "i"}}]}
+    rows = await db.users.find(query, {"_id": 0, "password_hash": 0}).sort("created_at", -1).to_list(500)
+    return rows
+
+@api_router.post("/admin/users/{user_id}/suspend")
+async def admin_suspend_user(user_id: str, _: dict = Depends(require_admin)):
+    await db.users.update_one({"id": user_id}, {"$set": {"suspended": True}})
+    await db.listings.update_many({"owner_id": user_id}, {"$set": {"status": "inactive"}})
+    return {"ok": True}
+
+@api_router.post("/admin/users/{user_id}/unsuspend")
+async def admin_unsuspend_user(user_id: str, _: dict = Depends(require_admin)):
+    await db.users.update_one({"id": user_id}, {"$set": {"suspended": False}})
+    return {"ok": True}
+
+@api_router.get("/admin/listings")
+async def admin_listings(_: dict = Depends(require_admin), status: Optional[str] = None):
+    query = {}
+    if status:
+        query["status"] = status
+    rows = await db.listings.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return rows
+
+@api_router.post("/admin/listings/{listing_id}/remove")
+async def admin_remove_listing(listing_id: str, _: dict = Depends(require_admin)):
+    await db.listings.update_one({"id": listing_id}, {"$set": {"status": "inactive"}})
+    return {"ok": True}
+
+@api_router.post("/admin/listings/{listing_id}/restore")
+async def admin_restore_listing(listing_id: str, _: dict = Depends(require_admin)):
+    await db.listings.update_one({"id": listing_id}, {"$set": {"status": "active"}})
+    return {"ok": True}
+
+@api_router.get("/admin/reports")
+async def admin_reports(_: dict = Depends(require_admin)):
+    rows = await db.reports.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return rows
+
+@api_router.post("/admin/reports/{report_id}/resolve")
+async def admin_resolve_report(report_id: str, _: dict = Depends(require_admin)):
+    await db.reports.update_one({"id": report_id}, {"$set": {"status": "resolved"}})
+    return {"ok": True}
+
+@api_router.get("/admin/bookings")
+async def admin_bookings(_: dict = Depends(require_admin)):
+    rows = await db.bookings.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return rows
 
 # ----------- Routes: Geo / Cities -----------
 @api_router.get("/geo/reverse")

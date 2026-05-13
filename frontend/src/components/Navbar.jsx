@@ -25,7 +25,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-40 backdrop-blur-md bg-[#FDFBF7]/80 border-b border-[#E8E3DA]" data-testid="main-navbar">
       <div className="max-w-7xl mx-auto px-6 lg:px-12 h-20 flex items-center justify-between">
         <Link to="/" data-testid="brand-logo" className="flex items-baseline gap-1">
-          <span className="font-serif-display text-3xl tracking-tight text-[#1A1A1A]">DressCircle</span>
+          <span className="font-serif-display text-3xl tracking-tight text-[#1A1A1A]">Restyle</span>
           <span className="w-1.5 h-1.5 bg-[#9C4154] rounded-full mb-1.5" />
         </Link>
 
@@ -34,6 +34,7 @@ export default function Navbar() {
           <NavItem to="/upload" label="List a Dress" testId="nav-upload" />
           <NavItem to="/wishlist" label="Wishlist" testId="nav-wishlist" />
           <NavItem to="/dashboard" label="Dashboard" testId="nav-dashboard" />
+          {user?.is_admin && <NavItem to="/admin" label="Admin" testId="nav-admin" />}
         </nav>
 
         <div className="hidden md:flex items-center gap-4">
@@ -61,7 +62,7 @@ export default function Navbar() {
           ) : (
             <>
               <Link to="/auth" data-testid="login-link" className="text-sm hover:text-[#9C4154] transition">Sign In</Link>
-              <Link to="/auth" data-testid="signup-cta" className="dc-btn-primary text-sm px-5 py-2">Join DressCircle</Link>
+              <Link to="/auth" data-testid="signup-cta" className="dc-btn-primary text-sm px-5 py-2">Join Restyle</Link>
             </>
           )}
         </div>

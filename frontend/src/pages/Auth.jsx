@@ -37,7 +37,7 @@ export default function AuthPage() {
     setBusy(true);
     try {
       await signup({ name, email, password, city, phone });
-      toast.success("Welcome to DressCircle!");
+      toast.success("Welcome to Restyle!");
       nav("/feed");
     } catch (err) {
       toast.error(err.response?.data?.detail || "Signup failed");
@@ -60,7 +60,7 @@ export default function AuthPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      await verifyOtp({ phone, code: otp, name: name || "DressCircle User", city });
+      await verifyOtp({ phone, code: otp, name: name || "Restyle User", city });
       toast.success("Welcome!");
       nav("/feed");
     } catch (err) {
@@ -71,10 +71,10 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-[#FDFBF7]" data-testid="auth-page">
       <div className="relative hidden lg:block">
-        <img src={COVER} alt="DressCircle" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={COVER} alt="Restyle" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
         <div className="absolute bottom-12 left-12 text-white max-w-md">
-          <span className="dc-badge bg-white/20 text-white backdrop-blur">DressCircle</span>
+          <span className="dc-badge bg-white/20 text-white backdrop-blur">Restyle</span>
           <h2 className="font-serif-display text-5xl mt-4 leading-tight">A boutique closet, shared between women.</h2>
         </div>
       </div>
@@ -86,7 +86,7 @@ export default function AuthPage() {
           </Link>
 
           <div className="flex items-baseline gap-1">
-            <span className="font-serif-display text-3xl text-[#1A1A1A]">DressCircle</span>
+            <span className="font-serif-display text-3xl text-[#1A1A1A]">Restyle</span>
             <span className="w-1.5 h-1.5 bg-[#9C4154] rounded-full mb-1.5" />
           </div>
 
@@ -111,10 +111,10 @@ export default function AuthPage() {
               <button data-testid="login-submit" type="submit" disabled={busy} className="dc-btn-primary w-full">{busy ? "Signing in..." : "Sign In"}</button>
               <p className="text-xs text-[#6E6B68] text-center">
                 Demo: <button type="button" data-testid="demo-login" onClick={async () => {
-                  setEmail("demo@dresscircle.in"); setPassword("demo1234");
+                  setEmail("demo@restyle.in"); setPassword("demo1234");
                   setBusy(true);
                   try {
-                    await login("demo@dresscircle.in", "demo1234");
+                    await login("demo@restyle.in", "demo1234");
                     toast.success("Welcome back!");
                     nav("/feed");
                   } catch (err) {

@@ -36,6 +36,10 @@ export default function DressCard({ dress, onWishlist, isWishlisted }) {
             )}
           </div>
           <h3 className="font-serif-display text-xl mt-1.5 leading-tight text-[#1A1A1A] line-clamp-2">{dress.title}</h3>
+          <div className="flex items-center gap-2 mt-1 text-[10px] text-[#6E6B68]">
+            {dress.condition && <span className="dc-badge bg-[#F5F2EB] text-[#1A1A1A] text-[9px] py-0.5 px-2">{dress.condition}</span>}
+            {dress.times_rented > 0 && <span>· Rented {dress.times_rented}×</span>}
+          </div>
           <div className="mt-2 flex items-end justify-between">
             <div>
               <div className="text-[#1A1A1A] font-medium">₹{dress.rent_price.toLocaleString("en-IN")}</div>

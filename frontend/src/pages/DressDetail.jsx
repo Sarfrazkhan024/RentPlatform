@@ -105,7 +105,9 @@ export default function DressDetail() {
               <Spec label="Size" value={dress.size} />
               <Spec label="Color" value={dress.color} />
               <Spec label="Brand" value={dress.brand || "—"} />
+              <Spec label="Condition" value={dress.condition || "Good"} />
               {dress.occasion && <Spec label="Occasion" value={dress.occasion} />}
+              {(dress.times_rented > 0 || dress.item_type === "accessory") && <Spec label="Rented" value={`${dress.times_rented || 0}×`} />}
             </div>
 
             <div className="dc-card p-6 mt-6">

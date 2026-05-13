@@ -8,7 +8,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-16 grid grid-cols-2 md:grid-cols-4 gap-10">
         <div className="col-span-2">
           <div className="flex items-baseline gap-1">
-            <span className="font-serif-display text-3xl text-[#1A1A1A]">DressCircle</span>
+            <span className="font-serif-display text-3xl text-[#1A1A1A]">Restyle</span>
             <span className="w-1.5 h-1.5 bg-[#9C4154] rounded-full mb-1.5" />
           </div>
           <p className="mt-3 text-sm text-[#6E6B68] max-w-sm leading-relaxed">
@@ -39,7 +39,7 @@ export default function Footer() {
       </div>
       <div className="border-t border-[#E8E3DA]">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 py-6 text-xs text-[#6E6B68] flex justify-between items-center">
-          <span>© 2026 DressCircle. Made with care in India.</span>
+          <span>© 2026 Restyle. Made with care in India.</span>
           <span>Phase 1 — Beta</span>
         </div>
       </div>
