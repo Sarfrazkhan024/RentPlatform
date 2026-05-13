@@ -124,23 +124,26 @@ class DressListing(BaseModel):
     owner_id: str
     title: str
     description: str
-    category: Literal["Western", "Ethnic", "Partywear", "Formal"]
-    size: Literal["XS", "S", "M", "L", "XL", "XXL"]
+    category: str                              # dress: Western|Ethnic|Partywear|Formal; accessory: Jewellery|Bags|Shoes|Belts|Scarves|Hair Accessories
+    size: str
     color: str
     brand: Optional[str] = None
     occasion: Optional[str] = None
-    rent_price: float  # per 3 days
+    condition: Optional[str] = "Good"
+    item_type: Optional[str] = "dress"
+    rent_price: float
     security_deposit: float
     sale_price: Optional[float] = None
-    images: List[str]  # list of URLs (external or our /api/files/...)
+    images: List[str]
     city: str
     lat: float
     lng: float
     available_from: Optional[str] = None
     available_to: Optional[str] = None
-    booked_dates: List[str] = []  # ISO date strings
-    status: Literal["active", "inactive"] = "active"
+    booked_dates: List[str] = []
+    status: str = "active"
     views: int = 0
+    times_rented: int = 0
     created_at: str
 
 class ListingCreate(BaseModel):
@@ -841,12 +844,21 @@ async def admin_users(_: dict = Depends(require_admin), q: Optional[str] = None)
 @api_router.post("/admin/users/{user_id}/suspend")
 async def admin_suspend_user(user_id: str, _: dict = Depends(require_admin)):
     await db.users.update_one({"id": user_id}, {"$set": {"suspended": True}})
-    await db.listings.update_many({"owner_id": user_id}, {"$set": {"status": "inactive"}})
+    # Mark their listings as inactive AND tag the reason so unsuspend can restore
+    await db.listings.update_many(
+        {"owner_id": user_id, "status": "active"},
+        {"$set": {"status": "inactive", "suspended_by_admin": True}}
+    )
     return {"ok": True}
 
 @api_router.post("/admin/users/{user_id}/unsuspend")
 async def admin_unsuspend_user(user_id: str, _: dict = Depends(require_admin)):
     await db.users.update_one({"id": user_id}, {"$set": {"suspended": False}})
+    # Restore only the listings we deactivated during suspension
+    await db.listings.update_many(
+        {"owner_id": user_id, "suspended_by_admin": True},
+        {"$set": {"status": "active"}, "$unset": {"suspended_by_admin": ""}}
+    )
     return {"ok": True}
 
 @api_router.get("/admin/listings")
@@ -864,6 +876,12 @@ async def admin_remove_listing(listing_id: str, _: dict = Depends(require_admin)
 
 @api_router.post("/admin/listings/{listing_id}/restore")
 async def admin_restore_listing(listing_id: str, _: dict = Depends(require_admin)):
+    listing = await db.listings.find_one({"id": listing_id})
+    if not listing:
+        raise HTTPException(404, "Listing not found")
+    owner = await db.users.find_one({"id": listing["owner_id"]})
+    if owner and owner.get("suspended"):
+        raise HTTPException(400, "Cannot restore listing: owner is suspended. Unsuspend the owner first.")
     await db.listings.update_one({"id": listing_id}, {"$set": {"status": "active"}})
     return {"ok": True}
 

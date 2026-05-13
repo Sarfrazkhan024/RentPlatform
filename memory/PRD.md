@@ -47,9 +47,21 @@ Hyperlocal fashion rental and resale platform for women in India. Peer-to-peer m
 - ✅ Top dresses section on Landing (real /trending data, bento layout)
 - ✅ Glamour redesign: gold accents, marquee strip, italic serif emphasis, testimonials, gold underline highlights
 
+## Iteration 3 (2026-05) — Rebrand to "Restyle" + 7 feature requests
+- ✅ Global rename DressCircle → **Restyle** (all UI, page title, brand mark)
+- ✅ Listing model: new `condition` field (New / Like New / Good / Fair / Well Loved)
+- ✅ Listing model: `item_type` (dress | accessory) with category-aware UI (dress: Western/Ethnic/Partywear/Formal; accessory: Jewellery/Bags/Shoes/Belts/Scarves)
+- ✅ Seeded 6 accessories alongside 24 dresses
+- ✅ `times_rented` counter on each listing (bumped on booking approval); shown on card + detail
+- ✅ Profile **"On Rent"** tab: live + delayed bookings, "Mark returned" action (`POST /api/bookings/{id}/complete`)
+- ✅ **Super Admin Panel** at `/admin` (stats, users, listings, reports). Endpoints: `/api/admin/{stats,users,listings,reports,bookings}` with action verbs (suspend/unsuspend/remove/restore/resolve). Non-admin → 403. Suspend now tags listings as `suspended_by_admin` so unsuspend restores them. Restore-listing rejects if owner still suspended.
+- ✅ Default listings sort = distance ascending, no cap (radius_km default 100000)
+- ✅ Fixed route order: `/bookings/active` declared before `/bookings/{id}` (caught by testing agent)
+
 ## Backlog / Phase 2 (P1/P2)
-- P1: Background job for "notify when available" wishlist alerts (flag stored, not yet pushed)
+- P1: Background job to push "notify when available" wishlist alerts
 - P1: Rate-limit reports per user
+- P1: Refactor server.py (~950 lines) into routers
 - P2: Subscription billing UI (Free 5 listings vs Paid ₹1000/year unlimited)
 - P2: Payment gateway, courier integration, AI styling recommendations
 
